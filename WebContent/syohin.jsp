@@ -13,6 +13,15 @@
 
 <center>
 
+<h1>商品データ</h1>
+
+<p>
+<form action="SyohinSearch" method="post">
+商品名<input type="text" name="s_name">
+<input type="submit" value="検索">
+</form>
+</p>
+
 <table border="1">
 	<tr>
 		<td>商品ID</td>

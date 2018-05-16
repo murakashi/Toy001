@@ -12,7 +12,6 @@
 <% String[] delete_arr = (String[])session.getAttribute("delete_arr");
 %>
 
-%>
 <center>
 
 <h1>商品削除確認</h1>
@@ -21,12 +20,14 @@
 
 <p>商品ID→<%= delete_arr[0] %></p>
 
-<p>商品ID→<%= delete_arr[1] %></p>
+<p>商品名→<%= delete_arr[1] %></p>
 
 <form action="SyohinDeleteFinish" method="post">
 	<input type="submit" value="はい">
 	<input type="hidden" name="s_id" value="<%= delete_arr[0] %>">
 </form>
+
+<br>
 
 <form action="Syohin" method="post">
 	<input type="submit" value="キャンセル">
