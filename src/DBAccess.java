@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 public class DBAccess {
 
-	String url = "jdbc:postgresql://localhost:5432/kashi";
+	/*String url = "jdbc:postgresql://localhost:5432/kashi";
 	String user = "postgres";
 	String pass = "kashi1203";
 	String sql;
@@ -23,6 +23,32 @@ public class DBAccess {
 			//コネクションに対するステートメントを生成
 			//PreparedStatement ps = con.prepareStatement(sql);
 
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+			System.out.println(sql);
+		}
+	}*/
+
+	String sql;
+
+	String s;
+
+	String data;
+
+	Connection objCon;
+
+	public DBAccess() {
+		try {
+			//JDBCドライバを設定する
+			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+			//データベース名、ユーザ名、パスワード
+			String connUrl = "jdbc:sqlserver://STRA-CL0061\\SQLEXPRESS2012;database=DBENSYU;" +
+					"integratedSecurity=false;user=sa;password=Step2154822";
+
+			//接続開始
+			objCon = DriverManager.getConnection(connUrl);//
 		} catch (Exception objEx) {
 			//コンソールに「接続エラー内容」を表示
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
