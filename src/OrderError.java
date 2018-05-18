@@ -1,24 +1,29 @@
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import bean.SyouhinBean;
 
 /**
- * Servlet implementation class Syohin
+ * Servlet implementation class OrderError
  */
-@WebServlet("/Syohin")
-public class Syohin extends HttpServlet {
+@WebServlet("/OrderError")
+public class OrderError extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public Syohin() {
+    public OrderError() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -38,17 +43,15 @@ public class Syohin extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		/*DBAccess db = new DBAccess();
-
-		ArrayList<String[]> syohin_list = db.select_AllSyohin();
-
 		HttpSession session = request.getSession();
 
-		session.setAttribute("syohin_list", syohin_list);
+		ArrayList<SyouhinBean> syohin = (ArrayList<SyouhinBean>)session.getAttribute("syohin");
 
-		RequestDispatcher rd = request.getRequestDispatcher("syohin.jsp");
+		session.setAttribute("syohin", syohin);
 
-		rd.forward(request, response);*/
+		RequestDispatcher rd = request.getRequestDispatcher("orderCount.jsp");
+
+		rd.forward(request, response);
 	}
 
 }

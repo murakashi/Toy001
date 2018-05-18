@@ -6,6 +6,8 @@ public class OrderBean {
 	private int o_id;
 //	商品ID
 	private int s_id;
+//  仕入先ID
+	private String siire_id;
 //	発注数
 	private int o_count;
 //	仕入基準価格
@@ -63,5 +65,12 @@ public class OrderBean {
 		this.nyukoflg = nyukoflg;
 	}
 
+//仕入先ID
+	public String getSiire_id() {
+		return siire_id;
+	}
+	public void setSiire_id(String siire_id) {
+		this.siire_id = siire_id;
+	}
 
 }

@@ -47,6 +47,11 @@
 </form>
 </p>
 
+<p>
+<form action="Order" method="post">
+<input type="submit" value="発注">
+</form>
+
 </center>
 
 </body>

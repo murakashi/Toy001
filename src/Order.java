@@ -1,6 +1,7 @@
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -10,17 +11,19 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import bean.SyouhinBean;
+
 /**
- * Servlet implementation class SyohinDelete
+ * Servlet implementation class Order
  */
-@WebServlet("/SyohinDelete")
-public class SyohinDelete extends HttpServlet {
+@WebServlet("/Order")
+public class Order extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public SyohinDelete() {
+    public Order() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -40,17 +43,15 @@ public class SyohinDelete extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		String s_id = request.getParameter("s_id");
+		HttpSession session = request.getSession();
 
 		DBAccess db = new DBAccess();
 
-		String[] delete_arr = db.select_Syohin(s_id);
+		ArrayList<SyouhinBean> syohin = db.select_AllSyohin();
 
-		HttpSession session = request.getSession();
+		session.setAttribute("syohin", syohin);
 
-		session.setAttribute("delete_arr", delete_arr);
-
-		RequestDispatcher rd = request.getRequestDispatcher("syohinDeleteCheck.jsp");
+		RequestDispatcher rd = request.getRequestDispatcher("orderA.jsp");
 
 		rd.forward(request, response);
 	}

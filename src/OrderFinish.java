@@ -2,23 +2,25 @@
 
 import java.io.IOException;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
- * Servlet implementation class Syohin
+ * Servlet implementation class OrderFinish
  */
-@WebServlet("/Syohin")
-public class Syohin extends HttpServlet {
+@WebServlet("/OrderFinish")
+public class OrderFinish extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public Syohin() {
+    public OrderFinish() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -38,17 +40,26 @@ public class Syohin extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-		/*DBAccess db = new DBAccess();
+		HttpSession sesion = request.getSession();
 
-		ArrayList<String[]> syohin_list = db.select_AllSyohin();
+		String siire_id = (String)sesion.getAttribute("siire_id");//仕入先ID取得
 
-		HttpSession session = request.getSession();
+		String[] id_arr = (String[])sesion.getAttribute("id_arr");//商品IDの配列取得
 
-		session.setAttribute("syohin_list", syohin_list);
+		String[] count_arr = (String[])sesion.getAttribute("count_arr");//数量の配列取得
 
-		RequestDispatcher rd = request.getRequestDispatcher("syohin.jsp");
+		DBAccess db = new DBAccess();
 
-		rd.forward(request, response);*/
+		int max_id = db.get_MaxId();//伝票IDの最大値+1を取得する；
+
+		/***発注DBにインサートする***/
+		for(int i=0;i<id_arr.length;i++) {
+			db.insert_Order(max_id,id_arr[i],siire_id,count_arr[i]);//伝ID,商品ID,仕入先ID,数量渡す
+		}
+
+		RequestDispatcher rd = request.getRequestDispatcher("orderFinish.jsp");
+
+		rd.forward(request, response);
 	}
 
 }

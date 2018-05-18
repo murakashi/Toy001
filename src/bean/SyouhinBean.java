@@ -7,6 +7,8 @@ public class SyouhinBean {
 	private String s_name;
 //	カテゴリID
 	private String c_id;
+//  仕入先ID
+	private String siire_id;
 //	仕入基準価格
 	private int baseprice;
 //	販売単価
@@ -60,5 +62,13 @@ public class SyouhinBean {
 	public void setDelflg(String delflg) {
 		this.delflg = delflg;
 	}
+	public String getSiire_id() {
+		return siire_id;
+	}
+	public void setSiire_id(String siire_id) {
+		this.siire_id = siire_id;
+	}
+
+
 
 }
