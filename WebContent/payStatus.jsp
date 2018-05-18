@@ -20,8 +20,6 @@
 
 <h1>発注状況</h1>
 
-<form action="Pay" method="post">
-
 <table border="1">
 	<tr>
 		<td>伝票ID</td>
@@ -42,14 +40,20 @@
 		<input type="text" name="<%= order.getO_id() %>">
 		</td>
 		<td>
+		<form action="PayDetail" method="post">
+		<input type="submit" value="詳細">
+		</form>
+		</td>
+		<td>
+		<form action="Pay" method="post">
+		<input type="submit" value="支払">
+		</form>
 		</td>
 	</tr>
 <%
 	}
 %>
 </table>
-
-</form>
 
 </center>
 
