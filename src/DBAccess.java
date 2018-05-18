@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import bean.OrderBean;
 import bean.SyouhinBean;
 
 public class DBAccess {
@@ -245,4 +246,115 @@ public class DBAccess {
 		}
 		return result;
 	}
+
+	/******************発注テーブルから入庫フラグが0のものをセレクトする（発注状況で使う）**************************/
+	public ArrayList<OrderBean> select_order() {
+
+		sql = "select 伝票ID,仕入先名,発注日 " +
+				"from 発注 inner join 仕入先マスタ " +
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID " +
+				"where 入庫フラグ = '0' " +
+				"group by 伝票ID,仕入先名,発注日 " +
+				"order by 伝票ID";
+
+		//selectした結果を格納する用
+		ArrayList<OrderBean> order_list = new ArrayList<OrderBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				OrderBean order = new OrderBean();
+				order.setO_id(rs.getInt("伝票ID"));
+				order.setSiire_name(rs.getString("仕入先名"));
+				order.setO_date(rs.getDate("発注日"));
+				order_list.add(order);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return order_list;
+	}
+
+	/******************詳細ボタンが押されたら発注の詳細をセレクトする（発注状況詳細で使う）**************************/
+	public ArrayList<OrderBean> select_OrderDetail(String o_id) {
+
+		sql = "select 伝票ID,仕入先名,発注.商品ID,商品名,発注数 "+
+				"from 発注 inner join 仕入先マスタ "+
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID "+
+				"inner join 商品マスタ "+
+				"on 発注.商品ID = 商品マスタ.商品ID "+
+				"where 伝票ID = "+ o_id;
+
+		//selectした結果を格納する用
+		ArrayList<OrderBean> orderdetail_list = new ArrayList<OrderBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				OrderBean order = new OrderBean();
+				order.setO_id(rs.getInt("伝票ID"));
+				order.setSiire_name(rs.getString("仕入先名"));
+				order.setS_id(rs.getInt("商品ID"));
+				order.setS_name(rs.getString("商品名"));
+				order.setO_count(rs.getInt("発注数"));
+				orderdetail_list.add(order);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return orderdetail_list;
+	}
+
+	/*************入庫ボタン押したら発注テーブルの入庫フラグを0に更新する******/
+	public int update_order(String o_id) {
+
+		sql = "update 発注 set 入庫フラグ = '1' where 伝票ID ="+ o_id;
+
+		//selectした結果を格納する用
+		int result=0;
+		try {
+			Statement stmt = objCon.createStatement();
+
+			result = stmt.executeUpdate(sql);
+			//rs.close();
+			//stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return result;
+	}
+
+	/***********入庫ボタン押したら在庫テーブルにインサートする（未完成）******/
+	public int insert_Zaiko(String s_id,String count) {
+
+		sql = "insert into 在庫 values((select max(入出庫ID)+1 from 在庫),"+ s_id +","+ count +")";
+
+		//selectした結果を格納する用
+		int result=0;
+		try {
+			Statement stmt = objCon.createStatement();
+
+			result = stmt.executeUpdate(sql);
+			//rs.close();
+			//stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return result;
+	}
+
 }

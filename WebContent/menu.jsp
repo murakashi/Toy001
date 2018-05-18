@@ -4,16 +4,6 @@
 <html>
 <head>
 
-<% /**********未ログイン時のURL直接入力によるアクセス対策**********************/
-   String login_flag = (String)session.getAttribute("login_flag");
-
-   if(login_flag == null){//login_flagがOKでは無い場合
-	   RequestDispatcher rd = request.getRequestDispatcher("Login");//ログインページに遷移する
-	   rd.forward(request, response);
-	   return;
-   }
-%>
-
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>メニュー</title>
 </head>
@@ -37,20 +27,22 @@
 
 <p>
 <form action="Order" method="post">
-<input type="submit" value="発注・仕入れ">
-</form>
-</p>
-
-<p>
-<form action="Sales" method="post">
-<input type="submit" value="売上情報">
-</form>
-</p>
-
-<p>
-<form action="Order" method="post">
 <input type="submit" value="発注">
 </form>
+</p>
+
+<p>
+<form action="OrderStatus" method="post">
+<input type="submit" value="発注状況">
+</form>
+</p>
+
+<p>
+<form action="PayStatus" method="post">
+<input type="submit" value="支払状況">
+</form>
+</p>
+
 
 </center>
 
