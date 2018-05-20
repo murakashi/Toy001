@@ -46,7 +46,7 @@
 %>
 </table>
 
-<p>支払合計金額→今からやる</p>
+<p>支払合計金額→今から</p>
 
 <br>
 入金日<input type="text" name="pay_date">

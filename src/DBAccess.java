@@ -505,7 +505,7 @@ public class DBAccess {
 				order.setO_count(rs.getInt("発注数"));
 				order.setBaseprice(rs.getInt("仕入基準単価"));
 				order.setKingaku(rs.getInt("金額"));
-				paydetail_list.add(order);//配列をArrayListに詰める
+				paydetail_list.add(order);//ArrayListに詰める
 			}
 			rs.close();
 			stmt.close();
@@ -514,6 +514,38 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
 		return paydetail_list;
+	}
+
+	/******************支払の合計金額をセレクトする（支払状況詳細で使う）**************************/
+	public int select_PaySum(String o_id) {
+
+		sql = "select 伝票ID,仕入先名,sum(発注数*発注.仕入基準単価) as 支払合計金額 " +
+				"from 発注 inner join 仕入先マスタ " +
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID " +
+				"inner join 商品マスタ "+
+				"on 発注.商品ID = 商品マスタ.商品ID "+
+				"where 入庫フラグ = '1' " +
+				"and 伝票ID = "+ o_id +" "+
+				"group by 伝票ID,仕入先名 ";
+
+		//selectした結果を格納する用
+		int sum = 0;
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				sum = rs.getInt("支払合計金額");
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return sum;
 	}
 
 }

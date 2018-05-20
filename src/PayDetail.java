@@ -59,6 +59,10 @@ public class PayDetail extends HttpServlet {
 
 		session.setAttribute("tax", tax);
 
+		int sum = db.select_PaySum(o_id);
+
+		session.setAttribute("sum", sum);
+
 		RequestDispatcher rd = request.getRequestDispatcher("payDetail.jsp");
 
 		rd.forward(request, response);
