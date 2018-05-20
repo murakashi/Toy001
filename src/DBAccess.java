@@ -1,19 +1,45 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
 import bean.OrderBean;
+import bean.SiireBean;
 import bean.SyouhinBean;
 
 public class DBAccess {
 
+	/*String sql;
+
+	Connection objCon;*/
+
+	/**************postgreSQL用↓****************************/
+	String url = "jdbc:postgresql://localhost:5432/kashi";
+	String user = "postgres";
+	String pass = "kashi1203";
 	String sql;
 
-	Connection objCon;
+	Connection objCon = null;
 
 	public DBAccess() {
+		try {
+
+		Class.forName("org.postgresql.Driver");
+		//コネクションを生成
+		objCon = DriverManager.getConnection(url, user, pass);
+
+		//コネクションに対するステートメントを生成
+		//PreparedStatement ps = con.prepareStatement(sql);
+
+		}catch (SQLException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	/**************↑postgreSQL用***************************************
+
+	/*public DBAccess() {
 		try {
 			//JDBCドライバを設定する
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -29,7 +55,7 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 			System.out.println(sql);
 		}
-	}
+	}*/
 
 	/******************ログインする**************************/
 	public ArrayList<String[]> login(String u_id, String pass) {
@@ -96,6 +122,35 @@ public class DBAccess {
 		}
 		return syohin_list;
 	}
+
+	/******************商品マスタから全件セレクトする（発注に送る）**************************/
+	public ArrayList<SiireBean> select_Siire() {
+
+		sql = "select * from 仕入先マスタ";
+
+		//selectした結果を格納する用
+		ArrayList<SiireBean> siire_list = new ArrayList<SiireBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SiireBean siire = new SiireBean();
+				siire.setSiire_id(rs.getString("仕入先ID"));
+				siire.setSiire_name(rs.getString("仕入先名"));
+				siire_list.add(siire);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return siire_list;
+	}
+
 
 	/******************商品マスタから検索条件を指定してセレクトする**************************/
 	public SyouhinBean select_Syohin(String s_id) {
@@ -228,9 +283,12 @@ public class DBAccess {
 	}
 
 	/*******発注テーブルにインサートする***************************/
-	public int insert_Order(int max_id,String s_id,String siire_id,String count) {
+	public int insert_Order(int max_id,String s_id,String siire_id,String count,String price) {
 
-		sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +",GETDATE(),'0')";
+		/*sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +",GETDATE(),'0')";*/
+
+		//postgres用↓
+		sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",(select current_date),'0')";
 
 		//selectした結果を格納する用
 		int result=0;
@@ -355,6 +413,107 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
 		return result;
+	}
+
+	/**********消費税マスタから消費税率を求める（1.08）**********************************************/
+	public double select_tax() {
+
+		sql = "select 消費税率 " +
+				"from 消費税マスタ";
+
+		//selectした結果を格納する用
+		double tax = 0.0;
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				tax = rs.getDouble("消費税率");
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return tax;
+	}
+
+	/**********発注テーブルから入庫フラグが1のものをセレクトする（支払状況ページで使用する）******/
+	public ArrayList<OrderBean> select_payList() {
+
+		sql = "select 伝票ID,仕入先名,sum(発注数*発注.仕入基準単価) as 支払合計金額 " +
+				"from 発注 inner join 仕入先マスタ " +
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID " +
+				"inner join 商品マスタ "+
+				"on 発注.商品ID = 商品マスタ.商品ID "+
+				"where 入庫フラグ = '1' " +
+				"group by 伝票ID,仕入先名 " +
+				"order by 伝票ID";
+
+		//selectした結果を格納する用
+		ArrayList<OrderBean> order_list = new ArrayList<OrderBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				OrderBean order = new OrderBean();
+				order.setO_id(rs.getInt("伝票ID"));
+				order.setSiire_name(rs.getString("仕入先名"));
+				order.setKingaku(rs.getInt("支払合計金額"));
+				order_list.add(order);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return order_list;
+	}
+
+	/******************詳細ボタンが押されたら支払の詳細をセレクトする（支払状況詳細で使う）**************************/
+	public ArrayList<OrderBean> select_PayDetail(String o_id) {
+
+		sql = "select 伝票ID,仕入先名,発注日,発注.商品ID,商品名,発注数,発注.仕入基準単価,(発注.仕入基準単価*発注数) as 金額 "+
+				"from 発注 inner join 仕入先マスタ "+
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID "+
+				"inner join 商品マスタ "+
+				"on 発注.商品ID = 商品マスタ.商品ID "+
+				"where 伝票ID = "+ o_id;
+
+		//selectした結果を格納する用
+		ArrayList<OrderBean> paydetail_list = new ArrayList<OrderBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				OrderBean order = new OrderBean();
+				order.setO_id(rs.getInt("伝票ID"));
+				order.setSiire_name(rs.getString("仕入先名"));
+				order.setO_date(rs.getDate("発注日"));
+				order.setS_id(rs.getInt("商品ID"));
+				order.setS_name(rs.getString("商品名"));
+				order.setO_count(rs.getInt("発注数"));
+				order.setBaseprice(rs.getInt("仕入基準単価"));
+				order.setKingaku(rs.getInt("金額"));
+				paydetail_list.add(order);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return paydetail_list;
 	}
 
 }

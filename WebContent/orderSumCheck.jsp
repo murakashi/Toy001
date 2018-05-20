@@ -27,6 +27,8 @@
 <input type="submit" value="OK">
 </form>
 
+<br>
+
 <form action="Order" method="post">
 <input type="submit" value="キャンセル">
 </form>

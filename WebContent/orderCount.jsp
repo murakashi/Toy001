@@ -1,3 +1,4 @@
+<%@page import="bean.SiireBean"%>
 <%@page import="bean.SyouhinBean"%>
 <%@page import="java.util.ArrayList"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
@@ -10,7 +11,9 @@
 </head>
 <body>
 
-<% ArrayList<SyouhinBean> syohin = (ArrayList<SyouhinBean>)session.getAttribute("syohin"); %>
+<% ArrayList<SyouhinBean> syohin = (ArrayList<SyouhinBean>)session.getAttribute("syohin");
+   ArrayList<SiireBean> siire_list = (ArrayList<SiireBean>)session.getAttribute("siire_list");
+%>
 
 <form action="Order" method="post">
 <input type="submit" value="戻る">
@@ -22,7 +25,19 @@
 
 <form action="OrderSum" method="post">
 
-仕入先IDを入力してください<input type="text" name="siire_id">
+仕入先IDを入力してください
+<select name="siire_id">
+	<option value="未選択">未選択</option>
+<%
+	for(SiireBean siire : siire_list){
+%>
+	<option value="<%= siire.getSiire_id() %>"><%= siire.getSiire_name() %></option>
+<%
+	}
+%>
+</select>
+
+<br>
 
 <table border="1">
 	<tr>
@@ -47,6 +62,7 @@
 		<td>
 		<input type="text" name="count">
 		<input type="hidden" name="s_id" value="<%= syohinBean.getS_id() %>">
+		<input type="hidden" name="s_basePrice" value="<%= syohinBean.getBaseprice() %>">
 		</td>
 	</tr>
 <%

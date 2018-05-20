@@ -39,6 +39,8 @@ public class OrderSum extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
+		request.setCharacterEncoding("UTF-8");
+
 		HttpSession session = request.getSession();
 
 		try {
@@ -72,6 +74,9 @@ public class OrderSum extends HttpServlet {
 			//hiddenで商品ID取得
 			String[] id_arr = request.getParameterValues("s_id");
 
+			//hiddenで仕入基準単価取得（postgresで気づいた）
+			String[] price_arr = request.getParameterValues("s_basePrice");
+
 			int[] num_arr = new int[count_arr.length];
 
 			int sum = 0;
@@ -89,6 +94,8 @@ public class OrderSum extends HttpServlet {
 			session.setAttribute("count_arr", count_arr);//数量を格納している配列
 
 			session.setAttribute("id_arr", id_arr);//商品IDを格納している配列
+
+			session.setAttribute("price_arr", price_arr);//仕入基準単価を格納している配列（postgresで気づいた）
 
 			session.setAttribute("siire_id", siire_id);//仕入先IDを格納している文字列
 			/*************************************************************************/

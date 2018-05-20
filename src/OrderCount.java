@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import bean.SiireBean;
 import bean.SyouhinBean;
 
 /**
@@ -60,6 +61,10 @@ public class OrderCount extends HttpServlet {
 			}
 
 			session.setAttribute("syohin", syohin);
+
+			ArrayList<SiireBean> siire_list = db.select_Siire();//仕入先のセレクトボックスで使うため
+
+			session.setAttribute("siire_list", siire_list);
 
 			RequestDispatcher rd = request.getRequestDispatcher("orderCount.jsp");
 

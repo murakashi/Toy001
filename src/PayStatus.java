@@ -47,9 +47,17 @@ public class PayStatus extends HttpServlet {
 
 		ArrayList<OrderBean> order_payList = new ArrayList<OrderBean>();
 
-		order_payList = db.select_payList();
+		DBAccess db = new DBAccess();
+
+		double tax = db.select_tax();
+
+		tax = 1 + (tax / 100);
+
+		order_payList = db.select_payList();//発注テーブルに支払い状況を問い合わせる
 
 		session.setAttribute("order_payList", order_payList);
+
+		session.setAttribute("tax", tax);
 
 		RequestDispatcher rd = request.getRequestDispatcher("payStatus.jsp");
 
