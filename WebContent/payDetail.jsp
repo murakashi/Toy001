@@ -11,8 +11,11 @@
 <body>
 
 <% ArrayList<OrderBean> pay_list = (ArrayList<OrderBean>)session.getAttribute("pay_list");
-   double tax = (double)session.getAttribute("tax");
 %>
+
+<form action="PayStatus" method="post">
+<input type="submit" value="戻る">
+</form>
 
 <center>
 
@@ -39,14 +42,14 @@
 		<td><%= order.getS_name() %><input type="hidden" name="s_id" value="<%= order.getS_id() %>"></td>
 		<td><%= order.getO_count() %><input type="hidden" name="count" value="<%= order.getO_count() %>"></td>
 		<td><%= order.getBaseprice() %><input type="hidden" name="price" value="<%= order.getBaseprice() %>"></td>
-		<td><%= order.getKingaku()*tax %><input type="hidden" name="kingaku" value="<%= order.getKingaku() %>"></td>
+		<td><%= order.getKingaku() %><input type="hidden" name="kingaku" value="<%= order.getKingaku() %>"></td>
 	</tr>
 <%
 	}
 %>
 </table>
 
-<p>支払合計金額→今から</p>
+<p>支払合計金額→<%= session.getAttribute("sum") %></p>
 
 <br>
 入金日<input type="text" name="pay_date">

@@ -49,17 +49,15 @@ public class PayDetail extends HttpServlet {
 
 		DBAccess db = new DBAccess();
 
-		ArrayList<OrderBean> pay_list = db.select_PayDetail(o_id);
-
-		session.setAttribute("pay_list", pay_list);
-
-		double tax = db.select_tax();
+		float tax = db.select_tax();
 
 		tax = 1 + (tax / 100);
 
-		session.setAttribute("tax", tax);
+		ArrayList<OrderBean> pay_list = db.select_PayDetail(o_id,tax);
 
-		int sum = db.select_PaySum(o_id);
+		session.setAttribute("pay_list", pay_list);
+
+		int sum = db.select_PaySum(o_id,tax);
 
 		session.setAttribute("sum", sum);
 

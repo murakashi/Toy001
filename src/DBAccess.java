@@ -1,7 +1,6 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
@@ -11,12 +10,14 @@ import bean.SyouhinBean;
 
 public class DBAccess {
 
-	/*String sql;
+	/***********SQLServer用↓***********************************/
+	String sql;
 
-	Connection objCon;*/
+	Connection objCon;
+	/**********↑SQLServer用***********************************/
 
 	/**************postgreSQL用↓****************************/
-	String url = "jdbc:postgresql://localhost:5432/kashi";
+	/*String url = "jdbc:postgresql://localhost:5432/kashi";
 	String user = "postgres";
 	String pass = "kashi1203";
 	String sql;
@@ -36,10 +37,11 @@ public class DBAccess {
 		}catch (SQLException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-	}
-	/**************↑postgreSQL用***************************************
+	}*/
+	/**************↑postgreSQL用***************************************/
 
-	/*public DBAccess() {
+	/************SQLServer用↓*******************************************/
+	public DBAccess() {
 		try {
 			//JDBCドライバを設定する
 			Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -55,7 +57,8 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 			System.out.println(sql);
 		}
-	}*/
+	}
+	/***********↑SQLServer用************************************************/
 
 	/******************ログインする**************************/
 	public ArrayList<String[]> login(String u_id, String pass) {
@@ -123,7 +126,7 @@ public class DBAccess {
 		return syohin_list;
 	}
 
-	/******************商品マスタから全件セレクトする（発注に送る）**************************/
+	/******************仕入先マスタから全件セレクトする（発注に送る）**************************/
 	public ArrayList<SiireBean> select_Siire() {
 
 		sql = "select * from 仕入先マスタ";
@@ -285,10 +288,10 @@ public class DBAccess {
 	/*******発注テーブルにインサートする***************************/
 	public int insert_Order(int max_id,String s_id,String siire_id,String count,String price) {
 
-		/*sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +",GETDATE(),'0')";*/
+		sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",GETDATE(),'0')";
 
 		//postgres用↓
-		sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",(select current_date),'0')";
+		/*sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",(select current_date),'0')";*/
 
 		//selectした結果を格納する用
 		int result=0;
@@ -415,9 +418,8 @@ public class DBAccess {
 		return result;
 	}
 
-<<<<<<< HEAD
 	/******************支払状況の情報（発注テーブルの入庫フラグが1のもの）をセレクトする（支払状況で使う）**************************/
-	public ArrayList<OrderBean> select_payList() {
+	/*public ArrayList<OrderBean> select_payList() {
 
 		sql = "select 伝票ID,仕入先名,sum(発注数量*仕入基準単価) as 合計金額 "+
 				"from 発注 inner join 仕入先マスタ "+
@@ -449,17 +451,16 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
 		return orderdetail_list;
-	}
+	}*/
 
-=======
 	/**********消費税マスタから消費税率を求める（1.08）**********************************************/
-	public double select_tax() {
+	public float select_tax() {
 
 		sql = "select 消費税率 " +
 				"from 消費税マスタ";
 
 		//selectした結果を格納する用
-		double tax = 0.0;
+		float tax = 0;
 
 		try {
 			Statement stmt = objCon.createStatement();
@@ -467,7 +468,7 @@ public class DBAccess {
 			ResultSet rs = stmt.executeQuery(sql);
 
 			while (rs.next()) {
-				tax = rs.getDouble("消費税率");
+				tax = rs.getLong("消費税率");
 			}
 			rs.close();
 			stmt.close();
@@ -479,9 +480,9 @@ public class DBAccess {
 	}
 
 	/**********発注テーブルから入庫フラグが1のものをセレクトする（支払状況ページで使用する）******/
-	public ArrayList<OrderBean> select_payList() {
+	public ArrayList<OrderBean> select_payList(float tax) {
 
-		sql = "select 伝票ID,仕入先名,sum(発注数*発注.仕入基準単価) as 支払合計金額 " +
+		sql = "select 伝票ID,仕入先名,floor(sum(発注数*発注.仕入基準単価*"+tax+")) as 支払合計金額 " +
 				"from 発注 inner join 仕入先マスタ " +
 				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID " +
 				"inner join 商品マスタ "+
@@ -515,9 +516,10 @@ public class DBAccess {
 	}
 
 	/******************詳細ボタンが押されたら支払の詳細をセレクトする（支払状況詳細で使う）**************************/
-	public ArrayList<OrderBean> select_PayDetail(String o_id) {
+	public ArrayList<OrderBean> select_PayDetail(String o_id,float tax) {
 
-		sql = "select 伝票ID,仕入先名,発注日,発注.商品ID,商品名,発注数,発注.仕入基準単価,(発注.仕入基準単価*発注数) as 金額 "+
+		sql = "select 伝票ID,仕入先名,発注日,発注.商品ID,商品名,発注数,発注.仕入基準単価,"+
+				"floor((発注.仕入基準単価*発注数*"+tax+")) as 金額 "+
 				"from 発注 inner join 仕入先マスタ "+
 				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID "+
 				"inner join 商品マスタ "+
@@ -554,7 +556,39 @@ public class DBAccess {
 	}
 
 	/******************支払の合計金額をセレクトする（支払状況詳細で使う）**************************/
-	public int select_PaySum(String o_id) {
+	public int select_PaySum(String o_id,float tax) {
+
+		sql = "select 伝票ID,仕入先名,floor(sum(発注数*発注.仕入基準単価*"+tax+")) as 支払合計金額 " +
+				"from 発注 inner join 仕入先マスタ " +
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID " +
+				"inner join 商品マスタ "+
+				"on 発注.商品ID = 商品マスタ.商品ID "+
+				"where 入庫フラグ = '1' " +
+				"and 伝票ID = "+ o_id +" "+
+				"group by 伝票ID,仕入先名 ";
+
+		//selectした結果を格納する用
+		int sum = 0;
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				sum = rs.getInt("支払合計金額");
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return sum;
+	}
+
+	/******************支払の合計金額をセレクトする（支払状況詳細で使う）**************************/
+	/*public int select_PaySum(String o_id) {
 
 		sql = "select 伝票ID,仕入先名,sum(発注数*発注.仕入基準単価) as 支払合計金額 " +
 				"from 発注 inner join 仕入先マスタ " +
@@ -583,7 +617,6 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
 		return sum;
-	}
->>>>>>> branch 'master' of https://github.com/murakashi/Toy001.git
+	}*/
 
 }

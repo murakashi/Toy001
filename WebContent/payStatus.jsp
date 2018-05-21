@@ -12,9 +12,6 @@
 <body>
 
 <% ArrayList<OrderBean> order_payList = (ArrayList<OrderBean>)session.getAttribute("order_payList");
-   double tax = (double)session.getAttribute("tax");
-
-   DecimalFormat df = new DecimalFormat("0.#");
 %>
 
 <form action="Menu" method="post">
@@ -40,9 +37,9 @@
 	<tr>
 		<td><%= order.getO_id() %></td>
 		<td><%= order.getSiire_name() %></td>
-		<td><%=  Math.floor(order.getKingaku()*tax) %></td>
+		<td><%=  order.getKingaku() %></td>
 		<td>
-		<input type="text" name="<%= df.format(order.getO_id()) %>">
+		<input type="text" name="<%= order.getO_id() %>">
 		</td>
 		<td>
 		<form action="PayDetail" method="post">
@@ -53,12 +50,8 @@
 		</td>
 		<td>
 		<form action="Pay" method="post">
-<<<<<<< HEAD
-		<input type="submit" value="支払">
 		<input type="hidden" name="o_id" value="<%= order.getO_id() %>>">
-=======
 		<input type="submit" value="入金">
->>>>>>> branch 'master' of https://github.com/murakashi/Toy001.git
 		</form>
 		</td>
 	</tr>
