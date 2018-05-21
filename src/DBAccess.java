@@ -357,4 +357,40 @@ public class DBAccess {
 		return result;
 	}
 
+	/******************支払状況の情報（発注テーブルの入庫フラグが1のもの）をセレクトする（支払状況で使う）**************************/
+	public ArrayList<OrderBean> select_payList() {
+
+		sql = "select 伝票ID,仕入先名,sum(発注数量*仕入基準単価) as 合計金額 "+
+				"from 発注 inner join 仕入先マスタ "+
+				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID "+
+				"inner join 商品マスタ "+
+				"on 発注.商品ID = 商品マスタ.商品ID "+
+				"where 入庫フラグ = '1' "+
+				"group by 伝票ID,仕入先名";
+
+		//selectした結果を格納する用
+		ArrayList<OrderBean> orderdetail_list = new ArrayList<OrderBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				OrderBean order = new OrderBean();
+				order.setO_id(rs.getInt("伝票ID"));
+				order.setSiire_name(rs.getString("仕入先名"));
+				order.setS_id(rs.getInt("合計金額"));
+				orderdetail_list.add(order);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return orderdetail_list;
+	}
+
+
 }

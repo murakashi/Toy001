@@ -42,11 +42,13 @@
 		<td>
 		<form action="PayDetail" method="post">
 		<input type="submit" value="詳細">
+		<input type="hidden" name="o_id" value="<%= order.getO_id() %>>">
 		</form>
 		</td>
 		<td>
 		<form action="Pay" method="post">
 		<input type="submit" value="支払">
+		<input type="hidden" name="o_id" value="<%= order.getO_id() %>>">
 		</form>
 		</td>
 	</tr>
