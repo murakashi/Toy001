@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import bean.CategoryBean;
 import bean.SyouhinBean;
 
 /**
@@ -49,23 +50,30 @@ public class OrderSearch extends HttpServlet {
 
 		String s_name = request.getParameter("s_name");
 
-		String category = request.getParameter("category");
+		String c_id = request.getParameter("category");
 
 		String dflg = request.getParameter("dflg");
 
-		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
+		ArrayList<SyouhinBean> syohin = new ArrayList<SyouhinBean>();
+
+		ArrayList<CategoryBean> category = new ArrayList<CategoryBean>();
 
 		DBAccess db = new DBAccess();
 
-		if(!(dflg.equals("denger"))) {
-			syohin_list = db.select_SyohinA();
+		if(dflg.equals("denger")) {
+			syohin = db.select_SyohinA();
 		}else {
-			syohin_list = db.select_SyohinB(s_name,category);
+			syohin = db.select_SyohinB(s_name,c_id);
 		}
 
-		session.setAttribute("syohin_list", syohin_list);
+		category = db.select_Category();
+
+		session.setAttribute("syohin", syohin);
+		session.setAttribute("category", category);
 
 		RequestDispatcher rd = request.getRequestDispatcher("orderA.jsp");
+
+		rd.forward(request, response);
 
 
 	}

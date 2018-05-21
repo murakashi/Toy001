@@ -222,14 +222,20 @@ public class DBAccess {
 	/******************在庫から安全在庫数を下回っている商品をセレクトする（発注検索結果で使う）**************************/
 	public ArrayList<SyouhinBean> select_SyohinA() {
 
-		sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
-				"from 商品マスタ inner join カテゴリマスタ " +
-				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
-				"inner join 在庫 "+
+		/*String sql ="select 商品マスタ.商品ID,安全在庫数,sum(在庫数) as 在庫数合計\r\n" +
+				"from 商品マスタ inner join 在庫 \r\n" +
+				"on 商品マスタ.商品ID = 在庫.商品ID where 削除フラグ=0\r\n" +
+				"group by 商品マスタ.商品ID,安全在庫数\r\n" +
+				"having sum(在庫数) < 安全在庫数";*/
+
+		String sql ="select 商品マスタ.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,sum(在庫数) as 在庫数合計\r\n" +
+				"from 商品マスタ inner join 在庫 \r\n" +
 				"on 商品マスタ.商品ID = 在庫.商品ID "+
+				"inner join カテゴリマスタ "+
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID "+
 				"where 削除フラグ = '0' " +
-				"and 在庫数 < 商品マスタ.安全在庫数 "+
-				"order by 商品ID";
+				"group by 商品マスタ.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数\r\n" +
+				"having sum(在庫数) < 安全在庫数";
 
 		//selectした結果を格納する用
 		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
@@ -247,6 +253,7 @@ public class DBAccess {
 				syohin.setBaseprice(rs.getInt("仕入基準単価"));
 				syohin.setHtanka(rs.getInt("販売単価"));
 				syohin.setSafezaiko(rs.getInt("安全在庫数"));
+				rs.getInt("在庫数合計");
 				syohin_list.add(syohin);
 			}
 			rs.close();
