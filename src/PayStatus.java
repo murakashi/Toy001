@@ -14,16 +14,16 @@ import javax.servlet.http.HttpSession;
 import bean.OrderBean;
 
 /**
- * Servlet implementation class OrderDetail
+ * Servlet implementation class PayStatus
  */
-@WebServlet("/OrderDetail")
-public class OrderDetail extends HttpServlet {
+@WebServlet("/PayStatus")
+public class PayStatus extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public OrderDetail() {
+    public PayStatus() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -45,18 +45,23 @@ public class OrderDetail extends HttpServlet {
 
 		HttpSession session = request.getSession();
 
-		String o_id = request.getParameter("o_id");
+		ArrayList<OrderBean> order_payList = new ArrayList<OrderBean>();
 
 		DBAccess db = new DBAccess();
 
-		ArrayList<OrderBean> order_list = db.select_OrderDetail(o_id);
+		double tax = db.select_tax();
 
-		session.setAttribute("order_list", order_list);
+		tax = 1 + (tax / 100);
 
-		RequestDispatcher rd = request.getRequestDispatcher("orderDetail.jsp");
+		order_payList = db.select_payList();//発注テーブルに支払い状況を問い合わせる
+
+		session.setAttribute("order_payList", order_payList);
+
+		session.setAttribute("tax", tax);
+
+		RequestDispatcher rd = request.getRequestDispatcher("payStatus.jsp");
 
 		rd.forward(request, response);
-
 	}
 
 }

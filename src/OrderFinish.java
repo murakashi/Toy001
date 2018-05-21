@@ -48,13 +48,15 @@ public class OrderFinish extends HttpServlet {
 
 		String[] count_arr = (String[])sesion.getAttribute("count_arr");//数量の配列取得
 
+		String[] price_arr = (String[])sesion.getAttribute("price_arr");//仕入基準単価の配列取得（postgresで気づいた）
+
 		DBAccess db = new DBAccess();
 
 		int max_id = db.get_MaxId();//伝票IDの最大値+1を取得する；
 
 		/***発注DBにインサートする***/
 		for(int i=0;i<id_arr.length;i++) {
-			db.insert_Order(max_id,id_arr[i],siire_id,count_arr[i]);//伝ID,商品ID,仕入先ID,数量渡す
+			db.insert_Order(max_id,id_arr[i],siire_id,count_arr[i],price_arr[i]);//伝ID,商品ID,仕入先ID,数量,仕入単価渡す
 		}
 
 		RequestDispatcher rd = request.getRequestDispatcher("orderFinish.jsp");
