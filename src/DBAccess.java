@@ -268,12 +268,42 @@ public class DBAccess {
 	/******************在庫から商品名、カテゴリ名を指定して商品をセレクトする（発注検索結果で使う）**************************/
 	public ArrayList<SyouhinBean> select_SyohinB(String s_name,String c_id) {
 
-		sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+		/*sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
 				"from 商品マスタ inner join カテゴリマスタ " +
 				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
 				"inner join 在庫 "+
 				"on 商品マスタ.商品ID = 在庫.商品ID "+
-				"where 削除フラグ = '0' ";
+				"where 削除フラグ = '0' ";*/
+
+		sql = "select 商品マスタ.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,COALESCE(sum(在庫数),0) as 在庫数\r\n" +
+				"from 商品マスタ inner join カテゴリマスタ\r\n" +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID\r\n" +
+				"left outer join 在庫\r\n" +
+				"on 商品マスタ.商品ID = 在庫.商品ID\r\n" +
+				"where 1=1 ";
+				/*+ "商品名 like '%の%'\r\n" +
+				"and 商品マスタ.カテゴリID = '01'\r\n" +
+				"group by 商品マスタ.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数\r\n" +
+				"order by 商品マスタ.商品ID";*/
+
+		//商品名とカテゴリIDどちらも入力されている場合
+		if(!(s_name.equals("")) && !(c_id.equals("未選択"))) {
+			sql = sql + "and 商品名 like '%"+s_name+"%' and 商品マスタ.カテゴリID = '"+c_id+"' ";
+		}
+
+		//商品名が未入力で、カテゴリIDが入力されている場合
+		if(s_name.equals("") && !(c_id.equals("未選択"))) {
+			sql = sql + "and 商品マスタ.カテゴリID = '"+c_id+"' ";
+		}
+
+		//商品名が入力されていて、カテゴリIDが未入力の場合
+		if(!(s_name.equals("")) && c_id.equals("未選択")) {
+			sql = sql + "and 商品名 like '%"+s_name+"%' ";
+		}
+
+		sql = sql + "group by 商品マスタ.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 "+
+		            "order by 商品マスタ.商品ID";
+
 
 		//selectした結果を格納する用
 		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
@@ -382,10 +412,11 @@ public class DBAccess {
 	/*******発注テーブルにインサートする***************************/
 	public int insert_Order(int max_id,String s_id,String siire_id,String count,String price) {
 
-		sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",GETDATE(),'0')";
+		//SQLServer用
+		//sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",GETDATE(),'0')";
 
 		//postgres用↓
-		/*sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",(select current_date),'0')";*/
+		sql = "insert into 発注 values("+ max_id +","+ s_id +",'"+ siire_id +"',"+ count +","+price+",(select current_date),'0')";
 
 		//selectした結果を格納する用
 		int result=0;
@@ -439,7 +470,7 @@ public class DBAccess {
 	/******************詳細ボタンが押されたら発注の詳細をセレクトする（発注状況詳細で使う）**************************/
 	public ArrayList<OrderBean> select_OrderDetail(String o_id) {
 
-		sql = "select 伝票ID,仕入先名,発注.商品ID,商品名,発注数 "+
+		sql = "select 伝票ID,仕入先名,発注日,発注.商品ID,商品名,発注数 "+
 				"from 発注 inner join 仕入先マスタ "+
 				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID "+
 				"inner join 商品マスタ "+
@@ -458,6 +489,7 @@ public class DBAccess {
 				OrderBean order = new OrderBean();
 				order.setO_id(rs.getInt("伝票ID"));
 				order.setSiire_name(rs.getString("仕入先名"));
+				order.setO_date(rs.getDate("発注日"));
 				order.setS_id(rs.getInt("商品ID"));
 				order.setS_name(rs.getString("商品名"));
 				order.setO_count(rs.getInt("発注数"));

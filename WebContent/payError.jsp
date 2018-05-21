@@ -10,5 +10,9 @@
 
 <h1>入金する日付を入力してください（yyyy-MM-dd）</h1>
 
+<form action="PayDetailBack" method="post">
+<input type="submit" value="OK">
+</form>
+
 </body>
 </html>

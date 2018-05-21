@@ -22,6 +22,7 @@
 
 <h2>伝票ID→<%= order_list.get(0).getO_id() %></h2>
 <h2>仕入先名→<%= order_list.get(0).getSiire_name() %></h2>
+<h2>発注日→<%= order_list.get(0).getO_date() %></h2>
 
 <form action="OrderUpdate" method="post">
 <table border="1">

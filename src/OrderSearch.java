@@ -48,11 +48,11 @@ public class OrderSearch extends HttpServlet {
 
 		HttpSession session = request.getSession();
 
-		String s_name = request.getParameter("s_name");
+		String s_name = request.getParameter("s_name");//検索条件の商品名取得
 
-		String c_id = request.getParameter("category");
+		String c_id = request.getParameter("category");//検索条件のカテゴリID取得
 
-		String dflg = request.getParameter("dflg");
+		String dflg = request.getParameter("dflg");//検索条件の危険在庫チェックボックス取得
 
 		ArrayList<SyouhinBean> syohin = new ArrayList<SyouhinBean>();
 
@@ -60,7 +60,7 @@ public class OrderSearch extends HttpServlet {
 
 		DBAccess db = new DBAccess();
 
-		if(dflg.equals("denger")) {
+		if(dflg != null) {
 			syohin = db.select_SyohinA();
 		}else {
 			syohin = db.select_SyohinB(s_name,c_id);
