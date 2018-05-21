@@ -127,6 +127,41 @@ public class DBAccess {
 		return syohin_list;
 	}
 
+	/******************商品IDを指定して商品をセレクト（発注数量入力に送る）**************************/
+	public SyouhinBean select_Syohin(String s_id) {
+
+		sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"where 削除フラグ = '0' " +
+				"and 商品ID = "+ s_id +" "+
+ 				"order by 商品ID";
+
+		//selectした結果を格納する用
+		SyouhinBean syohin = new SyouhinBean();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				syohin.setS_id(rs.getInt("商品ID"));
+				syohin.setS_name(rs.getString("商品名"));
+				syohin.setC_id(rs.getString("カテゴリ名"));
+				syohin.setBaseprice(rs.getInt("仕入基準単価"));
+				syohin.setHtanka(rs.getInt("販売単価"));
+				syohin.setSafezaiko(rs.getInt("安全在庫数"));
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin;
+	}
+
 	/******************カテゴリマスタから全件セレクトする（発注に送る）**************************/
 	public ArrayList<CategoryBean> select_Category() {
 
@@ -184,18 +219,20 @@ public class DBAccess {
 	}
 
 
-	/******************商品マスタから検索条件を指定してセレクトする**************************/
-	public SyouhinBean select_Syohin(String s_id) {
+	/******************在庫から安全在庫数を下回っている商品をセレクトする（発注検索結果で使う）**************************/
+	public ArrayList<SyouhinBean> select_SyohinA() {
 
 		sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
 				"from 商品マスタ inner join カテゴリマスタ " +
 				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 "+
+				"on 商品マスタ.商品ID = 在庫.商品ID "+
 				"where 削除フラグ = '0' " +
-				"and 商品ID = '"+ s_id +"' "+
+				"and 在庫数 < 商品マスタ.安全在庫数 "+
 				"order by 商品ID";
 
 		//selectした結果を格納する用
-		SyouhinBean syohin = new SyouhinBean();
+		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
 
 		try {
 			Statement stmt = objCon.createStatement();
@@ -203,13 +240,14 @@ public class DBAccess {
 			ResultSet rs = stmt.executeQuery(sql);
 
 			while (rs.next()) {
+				SyouhinBean syohin = new SyouhinBean();
 				syohin.setS_id(rs.getInt("商品ID"));
 				syohin.setS_name(rs.getString("商品名"));
 				syohin.setC_id(rs.getString("カテゴリ名"));
 				syohin.setBaseprice(rs.getInt("仕入基準単価"));
 				syohin.setHtanka(rs.getInt("販売単価"));
 				syohin.setSafezaiko(rs.getInt("安全在庫数"));
-				break;
+				syohin_list.add(syohin);
 			}
 			rs.close();
 			stmt.close();
@@ -217,24 +255,44 @@ public class DBAccess {
 			//コンソールに「接続エラー内容」を表示
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
-		return syohin;
+		return syohin_list;
 	}
 
-	/***削除する（商品IDを指定して対象の商品マスタの削除フラグを'1'に更新する）***/
-	public void delete_Syohin(String s_id) {
+	/******************在庫から商品名、カテゴリ名を指定して商品をセレクトする（発注検索結果で使う）**************************/
+	public ArrayList<SyouhinBean> select_SyohinB(String s_name,String c_id) {
 
-		sql = "update 商品マスタ set 削除フラグ = '1' where 商品ID = '" + s_id + "'";
+		sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 "+
+				"on 商品マスタ.商品ID = 在庫.商品ID "+
+				"where 削除フラグ = '0' ";
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
 
 		try {
 			Statement stmt = objCon.createStatement();
 
-			stmt.executeUpdate(sql);
+			ResultSet rs = stmt.executeQuery(sql);
 
+			while (rs.next()) {
+				SyouhinBean syohin = new SyouhinBean();
+				syohin.setS_id(rs.getInt("商品ID"));
+				syohin.setS_name(rs.getString("商品名"));
+				syohin.setC_id(rs.getString("カテゴリ名"));
+				syohin.setBaseprice(rs.getInt("仕入基準単価"));
+				syohin.setHtanka(rs.getInt("販売単価"));
+				syohin.setSafezaiko(rs.getInt("安全在庫数"));
+				syohin_list.add(syohin);
+			}
+			rs.close();
 			stmt.close();
 		} catch (Exception objEx) {
 			//コンソールに「接続エラー内容」を表示
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
+		return syohin_list;
 	}
 
 	/********仕入先IDをもとに仕入先名を取得する（発注金額確認画面で使う）*******/

@@ -1,3 +1,4 @@
+<%@page import="bean.CategoryBean"%>
 <%@page import="bean.SyouhinBean"%>
 <%@page import="java.util.ArrayList"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
@@ -35,7 +36,9 @@ $(function() {
 });
 </script>
 
-<% ArrayList<SyouhinBean> syohin = (ArrayList<SyouhinBean>)session.getAttribute("syohin"); %>
+<% ArrayList<SyouhinBean> syohin = (ArrayList<SyouhinBean>)session.getAttribute("syohin");
+   ArrayList<CategoryBean> category = (ArrayList<CategoryBean>)session.getAttribute("category");
+%>
 
 <form action="Menu" method="post">
 <input type="submit" value="メニューに戻る">
@@ -44,6 +47,20 @@ $(function() {
 <center>
 
 <h1>発注</h1>
+
+<form action="OrderSearch" method="post">
+商品名<input type="text" name="s_name">
+カテゴリ<select name="category">
+			<option value="未選択">未選択</option>
+			<% for(int i=0;i<category.size();i++){ %>
+			<option value="<%= category.get(i).getCategoryid() %>"><%= category.get(i).getC_name() %></option>
+			<% } %>
+		</select>
+<input type="checkbox" name="dflg" value="denger">安全在庫数以下のもの
+<input type="submit" name="bname" value="検索">
+</form>
+
+<br>
 
 <span id="prev">前へ</span>
 <span id="page"></span>
