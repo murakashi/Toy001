@@ -25,7 +25,7 @@
 <h2>仕入先名→<%= pay_list.get(0).getSiire_name() %></h2>
 <h2>発注日→<%= pay_list.get(0).getO_date() %></h2>
 
-<form action="Pay" method="post">
+<form action="PayFinish" method="post">
 <table border="1">
 	<tr>
 		<td>商品ID</td>

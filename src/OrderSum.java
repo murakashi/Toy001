@@ -49,27 +49,42 @@ public class OrderSum extends HttpServlet {
 
 			RequestDispatcher rd;
 
+			//仕入先ID取得
+			String siire_id = request.getParameter("siire_id");
+
+			/**************仕入先未入力かつ、数値未入力の場合の処理****************/
+			int error=0;
+			for(String count : count_arr) {
+				if(count == null || count.equals("")) {
+					error++;
+				}
+			}
+
+			if(siire_id.equals("未選択") && error > 0) {
+				rd = request.getRequestDispatcher("orderErrorE.jsp");
+				rd.forward(request, response);
+				return;
+			}
+			/**************ここまで仕入先未入力かつ、数値未入力の場合の処理****************/
+
+			/***************仕入先未入力エラーの場合の処理**********************/
+			if (siire_id.equals("") || siire_id.equals("未選択") || siire_id == null) {
+				rd = request.getRequestDispatcher("orderErrorD.jsp");
+				rd.forward(request, response);
+				return;
+			}
+			/***************ここまで仕入先未入力エラーの場合の処理**********************/
+
 			/***************ここから数値未入力エラーの場合の処理**********************/
 			for (String count : count_arr) {
 				/*********数量が1つでも未入力だったら********/
 				if (count.equals("") || count == null) {
-					rd = request.getRequestDispatcher("orderSumError.jsp");
+					rd = request.getRequestDispatcher("orderErrorB.jsp");
 					rd.forward(request, response);
 					return;
 				}
 			}
 			/***************ここまで数値未入力エラーの場合の処理**********************/
-
-			//仕入先ID取得
-			String siire_id = request.getParameter("siire_id");
-
-			/***************仕入先未入力エラーの場合の処理**********************/
-			if (siire_id.equals("") || siire_id.equals("未選択") || siire_id == null) {
-				rd = request.getRequestDispatcher("orderSumError.jsp");
-				rd.forward(request, response);
-				return;
-			}
-			/***************ここまで仕入先未入力エラーの場合の処理**********************/
 
 			//hiddenで商品ID取得
 			String[] id_arr = request.getParameterValues("s_id");
@@ -108,7 +123,7 @@ public class OrderSum extends HttpServlet {
 
 			rd.forward(request, response);
 		} catch (NumberFormatException e) {
-			RequestDispatcher rd2 = request.getRequestDispatcher("orderSumError.jsp");
+			RequestDispatcher rd2 = request.getRequestDispatcher("orderErrorC.jsp");
 			rd2.forward(request, response);
 			return;
 		}

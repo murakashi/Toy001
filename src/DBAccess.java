@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import bean.CategoryBean;
 import bean.OrderBean;
 import bean.SiireBean;
 import bean.SyouhinBean;
@@ -124,6 +125,34 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
 		return syohin_list;
+	}
+
+	/******************カテゴリマスタから全件セレクトする（発注に送る）**************************/
+	public ArrayList<CategoryBean> select_Category() {
+
+		sql = "select * from カテゴリマスタ";
+
+		//selectした結果を格納する用
+		ArrayList<CategoryBean> category_list = new ArrayList<CategoryBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				CategoryBean category = new CategoryBean();
+				category.setC_id(rs.getString("カテゴリID"));
+				category.setC_name(rs.getString("カテゴリ名"));
+				category_list.add(category);//ArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return category_list;
 	}
 
 	/******************仕入先マスタから全件セレクトする（発注に送る）**************************/
@@ -587,36 +616,26 @@ public class DBAccess {
 		return sum;
 	}
 
-	/******************支払の合計金額をセレクトする（支払状況詳細で使う）**************************/
-	/*public int select_PaySum(String o_id) {
+	/*******入金ボタン押したら発注テーブルの入庫フラグ2（支払済み）にする***************************/
+	public int pay(String o_id) {
 
-		sql = "select 伝票ID,仕入先名,sum(発注数*発注.仕入基準単価) as 支払合計金額 " +
-				"from 発注 inner join 仕入先マスタ " +
-				"on 発注.仕入先ID = 仕入先マスタ.仕入先ID " +
-				"inner join 商品マスタ "+
-				"on 発注.商品ID = 商品マスタ.商品ID "+
-				"where 入庫フラグ = '1' " +
-				"and 伝票ID = "+ o_id +" "+
-				"group by 伝票ID,仕入先名 ";
+		sql = "update 発注 set 入庫フラグ = '2' where 伝票ID = "+ o_id;
 
 		//selectした結果を格納する用
-		int sum = 0;
-
+		int result=0;
 		try {
 			Statement stmt = objCon.createStatement();
 
-			ResultSet rs = stmt.executeQuery(sql);
-
-			while (rs.next()) {
-				sum = rs.getInt("支払合計金額");
-			}
-			rs.close();
-			stmt.close();
+			result = stmt.executeUpdate(sql);
+			//rs.close();
+			//stmt.close();
 		} catch (Exception objEx) {
 			//コンソールに「接続エラー内容」を表示
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
-		return sum;
-	}*/
+		return result;
+	}
+
+
 
 }
