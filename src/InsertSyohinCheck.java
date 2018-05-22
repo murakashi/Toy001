@@ -45,6 +45,9 @@ public class InsertSyohinCheck extends HttpServlet {
 
 		RequestDispatcher rd;
 
+		//エラーメッセージ格納用配列
+		String[] message = {"","","","","","","",""};
+
 		/***********入力項目取得************************/
 		String s_id = request.getParameter("s_id");
 
@@ -52,14 +55,31 @@ public class InsertSyohinCheck extends HttpServlet {
 
 		String category = request.getParameter("category");
 
-	    String siire_tanka = request.getParameter("siire_tanka");
+		String siire_tanka = request.getParameter("siire_tanka");
 
-	    String h_tanka = request.getParameter("h_tanka");
+		String h_tanka = request.getParameter("h_tanka");
 
 		String safe_zaiko = request.getParameter("safe_zaiko");
 
 		/*********入力チェック***************************/
-		String[] message = {"","","","",""};
+
+		try {
+			int x = Integer.parseInt("siire_tanka");
+		} catch (NumberFormatException e) {
+			message[5] = "仕入基準単は数値で入力してください";
+		}
+
+		try {
+			int y = Integer.parseInt("h_tanka");
+		} catch (NumberFormatException e) {
+			message[6] = "販売単価は数値で入力してください";
+		}
+
+		try {
+			int x = Integer.parseInt("safe_zaiko");
+		} catch (NumberFormatException e) {
+			message[7] = "安全在庫数は数値で入力してください";
+		}
 
 		if(s_name.equals("")) {
 			message[0] = "商品名を入力してください";
@@ -89,6 +109,8 @@ public class InsertSyohinCheck extends HttpServlet {
 				return;
 			}
 		}
+
+		/************ここまで入力値チェック*********************/
 
 		session.setAttribute("s_id", s_id);
 		session.setAttribute("s_name", s_name);
