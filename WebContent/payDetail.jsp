@@ -7,6 +7,34 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>支払詳細</title>
+<script language="javascript">
+
+function nyukin(){
+	var setDate = document.getElementById("pay_date");
+
+	if (!isDate(setDate.value,"/")){
+		if (!isDate(setDate.value,"-")){
+			alert("日付エラー");
+			return false;
+		}
+	}
+
+	document.frmMain.submit();
+
+}
+
+function isDate (str, delim) {
+	  var arr = str.split(delim);
+	  if (arr.length !== 3) return false;
+	  const date = new Date(arr[0], arr[1] - 1, arr[2]);
+	  if (arr[0] !== String(date.getFullYear()) || arr[1] !== ('0' + (date.getMonth() + 1)).slice(-2) || arr[2] !== ('0' + date.getDate()).slice(-2)) {
+	    return false;
+	  } else {
+	    return true;
+	  }
+	};
+
+</script>
 </head>
 <body>
 
@@ -25,7 +53,7 @@
 <h2>仕入先名→<%= pay_list.get(0).getSiire_name() %></h2>
 <h2>発注日→<%= pay_list.get(0).getO_date() %></h2>
 
-<form action="PayFinish" method="post">
+<form action="PayFinish" method="post" name="frmMain">
 <table border="1">
 	<tr>
 		<td>商品ID</td>
@@ -52,9 +80,10 @@
 <p>支払合計金額→<%= session.getAttribute("sum") %></p>
 
 <br>
-入金日<input type="text" name="pay_date">
+入金日<input type="text" name="pay_date" id="pay_date" >
 <input type="hidden" name="o_id" value="<%= pay_list.get(0).getO_id() %>">
-<input type="submit" value="入金">
+
+<input type="button" value="入金" onclick="nyukin();">
 </form>
 
 

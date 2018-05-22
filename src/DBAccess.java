@@ -2,7 +2,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import bean.CategoryBean;
 import bean.OrderBean;
@@ -125,6 +127,32 @@ public class DBAccess {
 			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
 		}
 		return syohin_list;
+	}
+
+	/****************商品IDの最大値+1を取得する******************************/
+	public int autoShohinId(){
+		try
+		{
+			//statcment生成
+			Statement stmt = objCon.createStatement();
+
+			//クエリ取得
+			String sql = "select max(商品ID) + 1 as 商品ID from 商品マスタ";
+
+			System.out.println(sql);
+
+			//問い合わせの実行
+			ResultSet rset = stmt.executeQuery(sql);
+			rset.next();
+			int newShohinId = rset.getInt("商品ID");
+			stmt.close();
+			return newShohinId;
+			}
+			 catch(Exception objEx)
+			{
+				 System.err.println(objEx.getClass().getName()+":"+objEx);
+			}
+			return -1;
 	}
 
 	/******************商品IDを指定して商品をセレクト（発注数量入力に送る）**************************/
@@ -717,6 +745,780 @@ public class DBAccess {
 	public int pay(String o_id) {
 
 		sql = "update 発注 set 入庫フラグ = '2' where 伝票ID = "+ o_id;
+
+		//selectした結果を格納する用
+		int result=0;
+		try {
+			Statement stmt = objCon.createStatement();
+
+			result = stmt.executeUpdate(sql);
+			//rs.close();
+			//stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return result;
+	}
+
+	/**************ここから統合分（佐藤さん）***********************************************************************/
+
+	/***削除する（商品IDを指定して対象の商品マスタの削除フラグを'1'に更新する）***/
+	public void delete_Syohin(String s_id) {
+
+		sql = "update 商品マスタ set 削除フラグ = '1' where 商品ID = '" + s_id + "'";
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			stmt.executeUpdate(sql);
+
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+	}
+	/***消費税をもらってくる*****************************************************/
+	public int getTax() {
+		int rset = 0;
+		try
+		{
+			Statement stmt = objCon.createStatement();
+			String sql = "select 消費税率 from 消費税マスタ";
+
+			ResultSet result = stmt.executeQuery(sql);
+			result.next();
+			rset = result.getInt("消費税率");
+
+			stmt.close();
+
+		}
+		catch(Exception objEx)
+		{
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+		}
+
+		return rset;
+
+	}
+
+	/***在庫マイナスを追加する******************************************************/
+	public int zaikoReduce(String syouID,int salNum2) {
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			String sql = "insert into 在庫 "
+		 		+ "values ((select max(入出庫ID)+1 from 在庫), "+syouID+","+salNum2+")";
+			int rset=stmt.executeUpdate(sql);
+			stmt.close();
+			return rset;
+		}
+		catch(Exception objEx) {
+			System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+
+		}
+		//リターン処理
+		return 0;
+
+	}
+
+
+	/***売上を入力する（正常販売なので入庫フラグは0）*************************************************/
+	public int register(String syouID,String day,String salNum,String tanka,String hason,int taxIn) {
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			String sql = "insert into 売上 "
+		 		+ "values ((select max(売上ID)+1 from 売上), "+syouID+", '"+day+"', "+salNum+", "+tanka+", '"+hason+"', "+taxIn+")";
+			int rset=stmt.executeUpdate(sql);
+			stmt.close();
+			return rset;
+		}
+		catch(Exception objEx) {
+			System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+
+		}
+		//リターン処理
+		return 0;
+
+	}
+	/***危険在庫を見つける***********************************************************************/
+	public ArrayList<String[]> getRiskData(){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+				Statement stmt = objCon.createStatement();
+				String sql ="select 商品マスタ.商品ID,安全在庫数,sum(在庫数) as 在庫数合計\r\n" +
+						"from 商品マスタ inner join 在庫 \r\n" +
+						"on 商品マスタ.商品ID = 在庫.商品ID where 削除フラグ=0\r\n" +
+						"group by 商品マスタ.商品ID,安全在庫数\r\n" +
+						"having sum(在庫数) < 安全在庫数";
+
+				ResultSet rset = stmt.executeQuery(sql);
+				while(rset.next())
+				{
+					String[] recdata = new String[1];
+					recdata[0] = rset.getString("商品ID");
+					ret.add(recdata);
+				}
+				rset.close();
+				stmt.close();
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+			}
+			return ret;
+	}
+
+	/***売上データを取ってくる*******************************************************************************************/
+	public ArrayList<String[]> getUriageData(){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+				Statement stmt = objCon.createStatement();
+				String sql ="select * from 売上 inner join 商品マスタ on 売上.商品ID = 商品マスタ.商品ID where 売上フラグ=0 order by 売上日";
+
+				ResultSet rset = stmt.executeQuery(sql);
+				while(rset.next())
+				{
+					String[] recdata = new String[4];
+					recdata[0] = rset.getString("売上日");
+					recdata[1] = rset.getString("商品名");
+					recdata[2] = rset.getString("売上数");
+					recdata[3] = rset.getString("販売単価");
+
+					ret.add(recdata);
+				}
+				rset.close();
+				stmt.close();
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+			}
+			return ret;
+	}
+
+	/***売上データを取ってくる(年)**********************************************************/
+	public ArrayList<String[]> getUriageYearData(){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+
+				Date date = new Date();
+				Date date2 = new Date();
+				SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd");
+
+				for(int y=2005;y<=2018;y++) {
+				date = df.parse(y+"/01/01");
+				date2 = df.parse(y+"/12/31");
+
+				}
+
+				Statement stmt = objCon.createStatement();
+				//String sql ="select * from 売上 inner join 商品マスタ on 売上.商品ID = 商品マスタ.商品ID where 売上日 between  '"+df.format(date)+"' and '"+df.format(date2)+"'order by 売上日 ";
+				String sql ="SELECT DATEPART(YEAR, 売上日)as 年,COUNT(*)as 件数,sum(売上数*売上.販売単価)as 金額,sum(売上数*仕入基準単価) as 仕入金額 FROM 売上 inner join 商品マスタ on 売上.商品ID = 商品マスタ.商品ID where 売上フラグ=0 GROUP BY DATEPART (YEAR, 売上日) order by DATEPART(YEAR, 売上日)";
+
+
+
+
+				ResultSet rset = stmt.executeQuery(sql);
+				while(rset.next())
+				{
+					String[] recdata = new String[4];
+					recdata[0] = rset.getString("年");
+					recdata[1] = rset.getString("件数");
+					recdata[2] = rset.getString("金額");
+					recdata[3] = rset.getString("仕入金額");
+
+					ret.add(recdata);
+				}
+				rset.close();
+				stmt.close();
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				objEx.printStackTrace();
+				//System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+			}
+			return ret;
+	}
+
+	/***売上検索(年)**************************************************************************/
+	public ArrayList<String[]> UriageYearDataSearch(String year){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+
+
+				Statement stmt = objCon.createStatement();
+				//String sql ="select * from 売上 inner join 商品マスタ on 売上.商品ID = 商品マスタ.商品ID where 売上日 between  '"+df.format(date)+"' and '"+df.format(date2)+"'order by 売上日 ";
+				String sql ="SELECT DATEPART(YEAR, 売上日)as 年,COUNT(*)as 件数,sum(売上数*売上.販売単価)as 金額,sum(売上数*仕入基準単価) as 仕入金額 FROM 売上 inner join 商品マスタ on 売上.商品ID = 商品マスタ.商品ID where DATEPART(YEAR, 売上日)='"+year+"' and 売上フラグ=0 GROUP BY DATEPART (YEAR, 売上日)";
+
+
+
+
+				ResultSet rset = stmt.executeQuery(sql);
+				while(rset.next())
+				{
+					String[] recdata = new String[4];
+					recdata[0] = rset.getString("年");
+					recdata[1] = rset.getString("件数");
+					recdata[2] = rset.getString("金額");
+					recdata[3] = rset.getString("仕入金額");
+
+					ret.add(recdata);
+				}
+				rset.close();
+				stmt.close();
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				objEx.printStackTrace();
+				//System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+			}
+			return ret;
+	}
+
+		//売上検索
+	public ArrayList<String[]> UriageSerch(String name,String category){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+				Statement stmt = objCon.createStatement();
+				String sql="select * from 売上 inner join 商品マスタ on 売上.商品ID = 商品マスタ.商品ID"
+						+ " where 売上フラグ=0";
+
+				if(!name.equals("")){
+					sql+=" and 商品名 like '%"+name+"%'";
+				}
+				if(!category.equals("")){
+					sql+=" and カテゴリID='"+category+"'";
+				}
+
+				sql+="order by 売上日 ";
+				System.out.println(sql);
+				ResultSet rset = stmt.executeQuery(sql);
+				while(rset.next())
+				{
+					String[] recdata = new String[4];
+					recdata[0] = rset.getString("売上日");
+					recdata[1] = rset.getString("商品名");
+					recdata[2] = rset.getString("売上数");
+					recdata[3] = rset.getString("販売単価");
+
+					ret.add(recdata);
+				}
+				rset.close();
+				stmt.close();
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				System.err.println(objEx.getClass().getName()+":"+objEx.getMessage());
+			}
+			return ret;
+	}
+
+
+//	在庫系処理　ここから
+	/******************商品マスタから検索条件を指定してセレクトする**************************/
+	public ArrayList<SyouhinBean> select_Single_Syohin(String s_id) {
+
+		sql = "select 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,sum(在庫数) as 在庫残量 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 " +
+				"on 商品マスタ.商品ID = 在庫.商品ID " +
+				"where 削除フラグ = '0' " +
+				"and 商品ID = '"+ s_id +"' "+
+				"group by 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+				"order by 残量.商品ID";
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean>  syohin = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean sb = new SyouhinBean();
+				sb.setS_id(rs.getInt("商品ID"));
+				sb.setS_name(rs.getString("商品名"));
+				sb.setC_id(rs.getString("カテゴリ名"));
+				sb.setBaseprice(rs.getInt("仕入基準単価"));
+				sb.setHtanka(rs.getInt("販売単価"));
+				sb.setZaiko(rs.getInt("在庫残量"));
+				syohin.add(sb);
+				break;
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin;
+	}
+
+	public ArrayList<SyouhinBean> select_Multi_Syohin(String s_name) {
+
+		sql = "select 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,sum(在庫数) as 在庫残量 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 " +
+				"on 商品マスタ.商品ID = 在庫.商品ID " +
+				"where 削除フラグ = '0' " +
+				"and 商品名 Like '%"+ s_name +"%' "+
+				"group by 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+				"order by 在庫.商品ID";
+
+
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean>  syohin = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean sb = new SyouhinBean();
+				sb.setS_id(rs.getInt("商品ID"));
+				sb.setS_name(rs.getString("商品名"));
+				sb.setC_id(rs.getString("カテゴリ名"));
+				sb.setBaseprice(rs.getInt("仕入基準単価"));
+				sb.setHtanka(rs.getInt("販売単価"));
+				sb.setZaiko(rs.getInt("在庫残量"));
+				syohin.add(sb);
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin;
+	}
+
+	public ArrayList<SyouhinBean> select_DengerSyohin() {
+
+		sql = "select 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,在庫残量 from " +
+				"(select 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,sum(在庫数) as 在庫残量 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 " +
+				"on 商品マスタ.商品ID = 在庫.商品ID " +
+				"where 削除フラグ = '0' " +
+				"group by 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数)as 残量 " +
+				"where 安全在庫数 > 在庫残量 "+
+				"order by 残量.商品ID";
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean>  syohin = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean sb = new SyouhinBean();
+				sb.setS_id(rs.getInt("商品ID"));
+				sb.setS_name(rs.getString("商品名"));
+				sb.setC_id(rs.getString("カテゴリ名"));
+				sb.setBaseprice(rs.getInt("仕入基準単価"));
+				sb.setHtanka(rs.getInt("販売単価"));
+				sb.setZaiko(rs.getInt("在庫残量"));
+				syohin.add(sb);
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin;
+	}
+
+	public ArrayList<SyouhinBean> select_Category(String categoryid) {
+
+		sql = "select 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,sum(在庫数) as 在庫残量 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 " +
+				"on 商品マスタ.商品ID = 在庫.商品ID " +
+				"where 削除フラグ = '0' " +
+				"and カテゴリマスタ.カテゴリID = '"+ categoryid +"' "+
+				"group by 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+				"order by 在庫.商品ID";
+
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean>  syohin = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean sb = new SyouhinBean();
+				sb.setS_id(rs.getInt("商品ID"));
+				sb.setS_name(rs.getString("商品名"));
+				sb.setC_id(rs.getString("カテゴリ名"));
+				sb.setBaseprice(rs.getInt("仕入基準単価"));
+				sb.setHtanka(rs.getInt("販売単価"));
+				sb.setZaiko(rs.getInt("在庫残量"));
+				syohin.add(sb);
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin;
+	}
+
+	public ArrayList<SyouhinBean> select_Syohin_Category(String s_name, String categoryid) {
+
+		sql = "select 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数,sum(在庫数) as 在庫残量 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"inner join 在庫 " +
+				"on 商品マスタ.商品ID = 在庫.商品ID " +
+				"where 削除フラグ = '0' " +
+				"and 商品名 Like '%"+ s_name +"%' "+
+				"and 商品マスタ.カテゴリID = '"+ categoryid +"' "+
+				"group by 在庫.商品ID,商品名,カテゴリ名,仕入基準単価,販売単価,安全在庫数 " +
+				"order by 在庫.商品ID";
+
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean>  syohin = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean sb = new SyouhinBean();
+				sb.setS_id(rs.getInt("商品ID"));
+				sb.setS_name(rs.getString("商品名"));
+				sb.setC_id(rs.getString("カテゴリ名"));
+				sb.setBaseprice(rs.getInt("仕入基準単価"));
+				sb.setHtanka(rs.getInt("販売単価"));
+				sb.setZaiko(rs.getInt("在庫残量"));
+				syohin.add(sb);
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin;
+	}
+//	在庫系処理　ここまで
+
+
+//	売上確認系処理ここから
+	public int getStartYear() {
+		int year = 0;
+
+		try
+		{
+			SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+			df.setLenient(false);
+
+			Statement stmt = objCon.createStatement();
+			 sql = "SELECT * FROM 開始年";
+
+
+			ResultSet rset = stmt.executeQuery(sql);
+			while(rset.next())
+			{
+				year = rset.getInt("年");
+				break;
+			}
+			rset.close();
+			stmt.close();
+		}
+		catch(Exception objEx)
+		{
+			//コンソールに「接続エラー内容」を表示
+			objEx.printStackTrace();;
+		}
+
+		return year;
+	}
+
+	public ArrayList<String[]> getUriageMonthData(){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+				df.setLenient(false);
+
+				Statement stmt = objCon.createStatement();
+				 sql = "SELECT 年,月,売上件数,金額,仕入金額 FROM "+
+						 "(SELECT DATEPART(YEAR, 売上日) as 年 "+
+						 ", DATEPART(MONTH, 売上日) as 月 "+
+						 ", COUNT(*) as 売上件数 "+
+						 ", SUM(売上数 * 売上.販売単価) as 金額 "+
+						 ", SUM(売上数 * 仕入基準単価) as 仕入金額 "+
+						 "FROM 売上 "+
+						 "inner join 商品マスタ "+
+						 "on 売上.商品ID = 商品マスタ.商品ID "+
+						 "where 売上フラグ = '0' "+
+						 "GROUP BY DATEPART(YEAR, 売上日) "+
+						 ", DATEPART(MONTH, 売上日)) as 月別売上 order by 年";
+
+
+				ResultSet rset = stmt.executeQuery(sql);
+				while(rset.next())
+				{
+					String[] recdata = new String[4];
+					recdata[0] = rset.getString("年") +"-"+ rset.getString("月");
+					recdata[1] = rset.getString("売上件数");
+					recdata[2] = rset.getString("金額");
+					recdata[3] = rset.getString("仕入金額");
+
+					ret.add(recdata);
+				}
+				rset.close();
+				stmt.close();
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				objEx.printStackTrace();;
+			}
+			return ret;
+	}
+
+	/***売上データを取ってくる(年)***/
+	public ArrayList<String[]> getUriageMonthData(String year){
+		ArrayList<String[]> ret = new ArrayList<String[]>();
+			try
+			{
+				SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+				df.setLenient(false);
+
+					Statement stmt = objCon.createStatement();
+					 sql = "SELECT 年,月,売上件数,金額,仕入金額 FROM "+
+							 "(SELECT DATEPART(YEAR, 売上日) as 年 "+
+							 ", DATEPART(MONTH, 売上日) as 月 "+
+							 ", COUNT(*) as 売上件数 "+
+							 ", SUM(売上数 * 売上.販売単価) as 金額 "+
+							 ", SUM(売上数 * 仕入基準単価) as 仕入金額 "+
+							 "FROM 売上 "+
+							 "inner join 商品マスタ "+
+							 "on 売上.商品ID = 商品マスタ.商品ID "+
+							 "where 売上フラグ = '0' "+
+							 "GROUP BY DATEPART(YEAR, 売上日) "+
+							 ", DATEPART(MONTH, 売上日)) as 月別売上 "
+							 + "where 年 = '"+ year +"' order by 月";
+
+
+					ResultSet rset = stmt.executeQuery(sql);
+					while(rset.next())
+					{
+						String[] recdata = new String[4];
+						recdata[0] = rset.getString("年") +"-"+ rset.getString("月");
+						recdata[1] = rset.getString("売上件数");
+						recdata[2] = rset.getString("金額");
+						recdata[3] = rset.getString("仕入金額");
+
+						ret.add(recdata);
+					}
+					rset.close();
+					stmt.close();
+//				}
+			}
+			catch(Exception objEx)
+			{
+				//コンソールに「接続エラー内容」を表示
+				objEx.printStackTrace();;
+			}
+			return ret;
+	}
+
+
+//	商品一覧系処理ここから
+	public ArrayList<SyouhinBean> All_SyohinData() {
+
+		sql = "select 商品ID,商品名,カテゴリ名,商品マスタ.仕入基準単価,販売単価 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"where 削除フラグ = '0' " +
+				"group by 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価 " +
+				"order by 商品ID";
+
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean syohin = new SyouhinBean();
+				syohin.setS_id(rs.getInt("商品ID"));
+				syohin.setS_name(rs.getString("商品名"));
+				syohin.setC_id(rs.getString("カテゴリ名"));
+				syohin.setBaseprice(rs.getInt("仕入基準単価"));
+				syohin.setHtanka(rs.getInt("販売単価"));
+				syohin_list.add(syohin);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin_list;
+	}
+
+
+	public ArrayList<SyouhinBean> SyohinList_CategorySearch(String category) {
+
+		sql = "select 商品ID,商品名,カテゴリマスタ.カテゴリ名,商品マスタ.仕入基準単価,販売単価 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"where 削除フラグ = '0' " +
+				"and カテゴリマスタ.カテゴリID = '" + category +"' "+
+				"group by 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価 " +
+				"order by 商品ID";
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean syohin = new SyouhinBean();
+				syohin.setS_id(rs.getInt("商品ID"));
+				syohin.setS_name(rs.getString("商品名"));
+				syohin.setC_id(rs.getString("カテゴリ名"));
+				syohin.setBaseprice(rs.getInt("仕入基準単価"));
+				syohin.setHtanka(rs.getInt("販売単価"));
+				syohin_list.add(syohin);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin_list;
+	}
+
+
+	public ArrayList<SyouhinBean> SyohinList_NameSearch(String syouhinname) {
+
+
+
+		sql = "select 商品ID,商品名,カテゴリ名,商品マスタ.仕入基準単価,販売単価 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"where 削除フラグ = '0' " +
+				"and 商品名 LIKE '%" + 	syouhinname +"%' "+
+				"group by 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価 " +
+				"order by 商品ID";
+
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean syohin = new SyouhinBean();
+				syohin.setS_id(rs.getInt("商品ID"));
+				syohin.setS_name(rs.getString("商品名"));
+				syohin.setC_id(rs.getString("カテゴリ名"));
+				syohin.setBaseprice(rs.getInt("仕入基準単価"));
+				syohin.setHtanka(rs.getInt("販売単価"));
+				syohin_list.add(syohin);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin_list;
+	}
+
+	public ArrayList<SyouhinBean> SyohinList_Name_Category_Search(String syouhinname, String category) {
+
+		sql = "select 商品ID,商品名,カテゴリ名,商品マスタ.仕入基準単価,販売単価 " +
+				"from 商品マスタ inner join カテゴリマスタ " +
+				"on 商品マスタ.カテゴリID = カテゴリマスタ.カテゴリID " +
+				"where 削除フラグ = '0' " +
+				"and 商品名 LIKE '%" + 	syouhinname +"%' "+
+				"and カテゴリマスタ.カテゴリID = '" + 	category +"' "+
+				"group by 商品ID,商品名,カテゴリ名,仕入基準単価,販売単価 " +
+				"order by 商品ID";
+
+
+		//selectした結果を格納する用
+		ArrayList<SyouhinBean> syohin_list = new ArrayList<SyouhinBean>();
+
+		try {
+			Statement stmt = objCon.createStatement();
+
+			ResultSet rs = stmt.executeQuery(sql);
+
+			while (rs.next()) {
+				SyouhinBean syohin = new SyouhinBean();
+				syohin.setS_id(rs.getInt("商品ID"));
+				syohin.setS_name(rs.getString("商品名"));
+				syohin.setC_id(rs.getString("カテゴリ名"));
+				syohin.setBaseprice(rs.getInt("仕入基準単価"));
+				syohin.setHtanka(rs.getInt("販売単価"));
+				syohin_list.add(syohin);//配列をArrayListに詰める
+			}
+			rs.close();
+			stmt.close();
+		} catch (Exception objEx) {
+			//コンソールに「接続エラー内容」を表示
+			System.err.println(objEx.getClass().getName() + ":" + objEx.getMessage());
+		}
+		return syohin_list;
+	}
+	/*********************ここまで佐藤君***************************************************************/
+
+	/*************ここまで統合分************************************************************************/
+
+	/************ここから追加分***********************************/
+	public int insert_Syohin(String s_id,String s_name,String category,String siire_tanka,String h_tanka,String safe_zaiko) {
+
+		//SQLServer用
+		sql = "insert into 商品マスタ values("+ s_id +",'"+ s_name +"','"+ category +"',"+ siire_tanka +","+h_tanka+","+safe_zaiko+",'0')";
 
 		//selectした結果を格納する用
 		int result=0;

@@ -43,6 +43,11 @@
 </form>
 </p>
 
+<p>
+<form action="InsertSyohin" method="post">
+<input type="submit" value="商品追加">
+</form>
+</p>
 
 </center>
 

@@ -9,6 +9,8 @@ public class ZaikoBean {
 	private int z_count;
 
 
+
+
 	public int getZid() {
 		return zid;
 	}
@@ -27,4 +29,5 @@ public class ZaikoBean {
 	public void setZ_count(int z_count) {
 		this.z_count = z_count;
 	}
+
 }

@@ -17,6 +17,8 @@ public class SyouhinBean {
 	private int safezaiko;
 //	削除フラグ
 	private String delflg;
+	//在庫残量
+		private int zaiko;
 
 
 
@@ -69,6 +71,14 @@ public class SyouhinBean {
 		this.siire_id = siire_id;
 	}
 
+
+
+	public int getZaiko() {
+		return zaiko;
+	}
+	public void setZaiko(int zaiko) {
+		this.zaiko = zaiko;
+	}
 
 
 }
